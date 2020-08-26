@@ -5,16 +5,63 @@
  */
 
  // Dependencies
- var http = require('http');
- var url = require('url');
+var http = require('http');
+var https = require('https');
+var url = require('url');
 const { StringDecoder } = require('string_decoder');
- var StrignDecoder = require('string_decoder').StringDecoder;
+var StrignDecoder = require('string_decoder').StringDecoder;
+var config = require('./config');
+var fs = require('fs');
 
- // the server should response to all requests with a string
- var server = http.createServer(function(req,res){
+
+// Instantiate a HTTP server
+var httpServer = http.createServer(function(req,res){
+    unifiedServer(req,res);
+});
+
+//  Start server and have it listen to config.port
+httpServer.listen(config.httpPort,function(){
+    console.log(`The ${config.envName} server is listening on ${config.httpPort}  now...`);
+});
+
+//// Instantiate a HTTPS server
+var httpsServerOptions = {
+    'key': fs.readFileSync('./https/key.pem'),
+    'cert': fs.readFileSync('./https/cert.pem')
+};
+var httpsServer = https.createServer(httpsServerOptions,function(req,res){
+    unifiedServer(req,res);
+});
+
+////  Start server and have it listen to config.port
+httpsServer.listen(config.httpsPort,function(){
+    console.log(`The ${config.envName} server is listening on ${config.httpsPort}  now...`);
+});
+
+
+// define the handlers
+var handlers = {};
+
+// Sample handler
+handlers.sample = function(data,callback){
+    // callback a http status code and the payload 
+    callback(406,{'name' : 'sample handler'});
+};
+
+// not found handler
+handlers.notFound = function(data,callback){
+    callback(404);
+};
+
+var router = {
+    'sample': handlers.sample
+}
+
+var unifiedServer = function(req,res){
+
     // get url and parse it
     var parsedUrl = url.parse(req.url,true)
-    
+        
     // get path from url
     var path = parsedUrl.pathname;
     // regex replace and leading OR trailing /'s with nothing
@@ -63,44 +110,11 @@ const { StringDecoder } = require('string_decoder');
             var payloadString = JSON.stringify(payload);
             
             // return response
+            res.setHeader('Content-Type','application/json')
             res.writeHead(statusCode);
             res.end(payloadString);
             // log the request path
             console.log('returning this response',statusCode,payloadString);
         });
-
-
-
-        // log the requested path 
-/*      console.log('Request received on path:[ '+trimmedPath+' ] with method :[ '+method+' ] has query string : ',queryStringObject );
-        console.log('Request receoved with these headers [ ',headers,' ]');
-        console.log('Request receoved with this payload [ ',buffer,' ] having length',buffer.length);
-*/
-       });
-
-
-
-});
-
-//  Start server and have it listen to port 3000
-server.listen(3000,function(){
-    console.log("The server is listening on port 3000 now...");
-});
-
-// define the handlers
-var handlers = {};
-
-// Sample handler
-handlers.sample = function(data,callback){
-    // callback a http status code and the payload 
-    callback(406,{'name' : 'sample handler'});
+    });
 };
-
-// not found handler
-handlers.notFound = function(data,callback){
-    callback(404);
-};
-
-var router = {
-    'sample': handlers.sample
-}
