@@ -13,7 +13,6 @@ var StrignDecoder = require('string_decoder').StringDecoder;
 var config = require('./config');
 var fs = require('fs');
 
-
 // Instantiate a HTTP server
 var httpServer = http.createServer(function(req,res){
     unifiedServer(req,res);
@@ -43,9 +42,9 @@ httpsServer.listen(config.httpsPort,function(){
 var handlers = {};
 
 // Sample handler
-handlers.sample = function(data,callback){
+handlers.ping = function(data,callback){
     // callback a http status code and the payload 
-    callback(406,{'name' : 'sample handler'});
+    callback(200);
 };
 
 // not found handler
@@ -54,7 +53,7 @@ handlers.notFound = function(data,callback){
 };
 
 var router = {
-    'sample': handlers.sample
+    'ping': handlers.ping
 }
 
 var unifiedServer = function(req,res){
